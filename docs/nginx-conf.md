@@ -7,11 +7,8 @@
   - [1. Main Block](#1)
   - [2. Event block](#2)
   - [3. HTTP block](#3)
-
 ---
-<a name="i"></a>
-## I. Giới thiệu về file cấu hình.
-
+## <a name="i">I. Giới thiệu về file cấu hình.</a>
 - Mặc định nginx có đường dẫn `/etc/nginx/nginx.conf`
 - Nginx quản lý cấu hình theo `Derective` và `Block` chúng có thể nằm lồng ghép với nhau. Những Derective không thuộc block nào sẽ nhóm lại gọi là `Main Block` những cấu hình trên Block này sẽ ảnh hưởng tới toàn bộ server
 - Nếu một derective nằm trong block nào đó thì nó có ý nghĩa trong block đó và các block bên trong, khi derective được định nghĩa lại trong các block con thì nó chỉ có trong block con đó
@@ -101,6 +98,7 @@
   #       }
   #}
 
+  ```
 - Trong môi trường Production, việc nắm vững sơ đồ thư mục giúp bạn triển khai và fix lỗi nhanh chóng:
   - /etc/nginx/nginx.conf: File cấu hình gốc, chứa các thiết lập toàn cục (Global).
   - /etc/nginx/conf.d/: Nơi chứa các cấu hình bổ sung (thường dùng cho các cấu hình dùng chung hoặc các module nhỏ).
@@ -112,16 +110,13 @@
 - Thư mục chứa mã nguồn (Web Root):
   - /usr/share/nginx/html/: Thư mục mặc định của gói cài đặt NGINX.
   - /var/www/html/: Thư mục chuẩn thường dùng trong thực tế triển khai web.
-<a name="ii"></a>
-## II. Cơ chế hoạt động của NGINX
+## <a name="ii">II. Cơ chế hoạt động của NGINX</a>
 - Khi một Request đi tới, NGINX thực hiện phân loại theo các bước:
 - Kiểm tra Port (Listen): Quét qua các file trong sites-enabled để tìm block server có port trùng với request.
 - Kiểm tra Server Name: Nếu nhiều file cùng nghe một port (ví dụ port 80), NGINX sẽ đối chiếu header Host của request với directive server_name.
 - Xử lý Location: Sau khi tìm được block server phù hợp, NGINX sẽ chạy các luật trong block location để trả về file tĩnh hoặc chuyển tiếp (proxy) dữ liệu.
-<a name="iii"></a>
-## III. Giải thích file cấu hình
-<a name="1"></a>
-### 1. MAIN BLOCK.
+## <a name="iii">III. Giải thích file cấu hình</a>
+### <a name="1">1. MAIN BLOCK.</a>
 - `User www-data;` : Cấu hình quy định worker processes được chạy với tài khoản nào, ở đây là nginx
 - `work_processes auto` : Câu hình chỉ ra rằng web server được xử lsy bằng 1 CPU Core (processor), giá trị này tương ứng với số CPU Core có trên server. Để kiểm tra số lượng CPU Core trên máy chủ sử dụng lệnh
   ```sh
@@ -130,42 +125,27 @@
   # hoặc
 
   cat /proc/cpuinfo
+  ```
 - `error_log /var/log/nginx/error.log;` đường dẫn đến file log của nginx
 - `pid /run/nginx.pid;` Số PID của master process, nginx sử dụng master process để quản lý worker process
-<a name="2"></a>
-### 2. Event Block
+### <a name="2">2. Event Block</a>
 - `worker_connections 1024;` Giá trị liên quan đến worker processes, 1024 có nghĩa mỗi worker process sẽ chịu tải là 1024 kết nối cùng lúc. Nếu chúng ta có 2 worker process thì khả năng chịu tải của server là 2048 kết nối tại một thời điểm
-<a name="3"></a>
-### 3. HTTP Block
-- log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-                      '$status $body_bytes_sent "$http_referer" '
-                      '"$http_user_agent" "$http_x_forwarded_for"';
+### <a name="3">3. HTTP Block</a>
+- Định nghĩa một mẫu log có tên là main được sử dụng bởi access_log , các thông tin được đưa vào file tương ứng với các biến như $remote_addr, $remote_user ,....
+  ```sh
+  log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+  ```
+- Chỉ ra đường dẫn tới file log :
+  ```sh
+  access_log  /var/log/nginx/access.log  main;
+  ```
+- Cấu hình này gọi đến function sendfile để xử lý việc truyền file :`sendfile on;`
+- Xác định thời gian chờ trước khi đóng 1 kết nối, ở đây là 65s: `keepalive_timeout   65;`
+- Gọi tới file chứa danh sách các file extension trong nginx
+  ```sh
+  include /etc/nginx/mime.types;
+  default_type        application/octet-stream;
+  ```
 
-    ```sh
-    Định nghĩa một mẫu log có tên là main được sử dụng bởi access_log , các thông tin được đưa vào file tương ứng với các 
-    biến như $remote_addr, $remote_user ,....
-    ```
-
-- access_log  /var/log/nginx/access.log  main;
-
-    ```sh
-    Chỉ ra đường dẫn tới file log .
-    ```
-
-- `sendfile on;` Cấu hình này gọi đến function sendfile để xử lý việc truyền file .
-
-- `tcp_nopush on;` 
-
-- `tcp_nodelay on;`
-
-- `keepalive_timeout   65;` Xác định thời gian chờ trước khi đóng 1 kết nối, ở đây là 65s.
-
--  include /etc/nginx/mime.types;
-   default_type        application/octet-stream;
-
-    ```sh
-    Gọi tới file chứa danh sách các file extension trong nginx
-    ```
-
-- `types_hash_max_size 2048;`
-  
