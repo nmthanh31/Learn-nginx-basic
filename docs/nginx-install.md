@@ -37,7 +37,7 @@ Các cơ chế Event-Driven:
 - Epoll: NGINX sử dụng các systemcall hiện đại của OS để theo dõi hàng ngàn kết nối đồng thời mà gần như không tốn tài nguyên CPU cho việc chuyển đổi ngữ cảnh
   <a name="2"></a>
 
-## 2. Cài đặt NGINX Nginx có sẵn trong repo mặc định của Ubuntu nên chỉ cần cài đặt bằng `apt` - Cập nhật hệ thống ```bash apt update
+## 2. Cài đặt NGINX Nginx có sẵn trong repo mặc định của Ubuntu nên chỉ cần cài đặt bằng `apt` - Cập nhật hệ thống `apt update`
 
 - Cài đặt NGINX
   ```bash
